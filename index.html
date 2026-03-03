@@ -2,447 +2,187 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ESP32-C3 BLE Reference</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>ESP32 BLE</title>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Syne:wght@400;700;800&display=swap');
-
+  @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Bebas+Neue&display=swap');
   :root {
-    --bg: #0a0e1a;
-    --card: #111827;
-    --border: #1e2d45;
-    --accent: #00d4ff;
-    --accent2: #ff6b35;
-    --green: #00ff88;
-    --text: #e2e8f0;
-    --muted: #64748b;
+    --bg: #060608;
+    --surface: #0f1117;
+    --border: rgba(255,255,255,0.06);
+    --accent: #c8ff00;
+    --accent-dim: rgba(200,255,0,0.12);
+    --red: #ff3b30;
+    --text: #f0f0f0;
+    --muted: rgba(255,255,255,0.35);
+    --safe-top: env(safe-area-inset-top, 0px);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
   }
-
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; background: var(--bg); color: var(--text); font-family: 'DM Mono', monospace; overflow: hidden; }
   body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: 'Syne', sans-serif;
-    min-height: 100vh;
-    padding: 2rem;
-    background-image:
-      radial-gradient(ellipse at 20% 50%, rgba(0,212,255,0.05) 0%, transparent 60%),
-      radial-gradient(ellipse at 80% 20%, rgba(255,107,53,0.05) 0%, transparent 60%);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: calc(var(--safe-top) + 2rem) 2rem calc(var(--safe-bottom) + 2rem);
+    min-height: 100dvh; position: relative;
   }
-
-  h1 {
-    font-size: 2rem;
-    font-weight: 800;
-    letter-spacing: -0.03em;
-    background: linear-gradient(90deg, var(--accent), var(--accent2));
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    margin-bottom: 0.25rem;
-  }
-
-  .subtitle {
-    color: var(--muted);
-    font-size: 0.9rem;
-    font-family: 'JetBrains Mono', monospace;
-    margin-bottom: 2.5rem;
-  }
-
-  .grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1.5rem;
-    max-width: 900px;
-    margin: 0 auto;
-  }
-
-  .card {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 1.5rem;
-    position: relative;
-    overflow: hidden;
-  }
-
-  .card::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; right: 0;
-    height: 2px;
-    background: linear-gradient(90deg, var(--accent), transparent);
-  }
-
-  .card.rx::before {
-    background: linear-gradient(90deg, var(--accent2), transparent);
-  }
-
-  .card.full { grid-column: 1 / -1; }
-
-  .card-label {
-    font-size: 0.7rem;
-    font-family: 'JetBrains Mono', monospace;
-    letter-spacing: 0.15em;
-    color: var(--muted);
-    text-transform: uppercase;
-    margin-bottom: 0.75rem;
-  }
-
-  .card-title {
-    font-size: 1.1rem;
-    font-weight: 700;
-    margin-bottom: 1rem;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-  }
-
-  .dot {
-    width: 8px; height: 8px;
-    border-radius: 50%;
-    background: var(--accent);
-    box-shadow: 0 0 8px var(--accent);
-    animation: pulse 2s ease-in-out infinite;
-  }
-  .dot.rx { background: var(--accent2); box-shadow: 0 0 8px var(--accent2); }
-
-  @keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.4; }
-  }
-
-  .uuid-block {
-    background: #0d1525;
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 0.75rem 1rem;
-    margin-bottom: 0.75rem;
-  }
-
-  .uuid-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 1rem;
-    margin-bottom: 0.35rem;
-  }
-  .uuid-row:last-child { margin-bottom: 0; }
-
-  .uuid-key {
-    font-size: 0.7rem;
-    color: var(--muted);
-    font-family: 'JetBrains Mono', monospace;
-    white-space: nowrap;
-  }
-
-  .uuid-val {
-    font-size: 0.72rem;
-    font-family: 'JetBrains Mono', monospace;
-    color: var(--accent);
-    word-break: break-all;
-    cursor: pointer;
-    transition: color 0.2s;
-  }
-  .uuid-val:hover { color: #fff; }
-  .uuid-val.rx { color: var(--accent2); }
-
-  .copy-hint {
-    font-size: 0.65rem;
-    color: var(--muted);
-    font-family: 'JetBrains Mono', monospace;
-    margin-top: 0.5rem;
-    opacity: 0.7;
-  }
-
-  .flow {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 1rem;
-    padding: 1.5rem 0;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.85rem;
-  }
-
-  .device {
-    background: #0d1525;
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 0.75rem 1.25rem;
-    text-align: center;
-    min-width: 110px;
-  }
-
-  .device-name { font-weight: 700; font-size: 0.9rem; }
-  .device-sub { color: var(--muted); font-size: 0.7rem; margin-top: 0.2rem; }
-
-  .arrows {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-    align-items: center;
-  }
-
-  .arrow {
-    display: flex;
-    align-items: center;
-    gap: 0.4rem;
-    font-size: 0.7rem;
-    white-space: nowrap;
-  }
-
-  .arrow-line {
-    height: 1px;
-    width: 80px;
-    position: relative;
-  }
-  .arrow-line.tx { background: var(--accent); }
-  .arrow-line.rx { background: var(--accent2); }
-
-  .arrow-line::after {
-    content: '▶';
-    position: absolute;
-    right: -6px;
-    top: -7px;
-    font-size: 0.6rem;
-  }
-  .arrow-line.tx::after { color: var(--accent); }
-  .arrow-line.rx::after { color: var(--accent2); }
-
-  .arrow-line.left::after {
-    content: '◀';
-    left: -6px;
-    right: auto;
-  }
-
-  .tag {
-    display: inline-block;
-    font-size: 0.65rem;
-    font-family: 'JetBrains Mono', monospace;
-    padding: 0.15rem 0.5rem;
-    border-radius: 4px;
-    font-weight: 700;
-    letter-spacing: 0.05em;
-    margin-right: 0.3rem;
-  }
-  .tag.notify { background: rgba(0,212,255,0.15); color: var(--accent); border: 1px solid rgba(0,212,255,0.3); }
-  .tag.read   { background: rgba(0,255,136,0.1); color: var(--green); border: 1px solid rgba(0,255,136,0.3); }
-  .tag.write  { background: rgba(255,107,53,0.15); color: var(--accent2); border: 1px solid rgba(255,107,53,0.3); }
-
-  .step-list {
-    list-style: none;
-    counter-reset: steps;
-  }
-  .step-list li {
-    counter-increment: steps;
-    display: flex;
-    gap: 0.75rem;
-    padding: 0.6rem 0;
-    border-bottom: 1px solid var(--border);
-    font-size: 0.85rem;
-    line-height: 1.5;
-  }
-  .step-list li:last-child { border-bottom: none; }
-  .step-list li::before {
-    content: counter(steps);
-    background: linear-gradient(135deg, var(--accent), #006aff);
-    color: #000;
-    font-weight: 700;
-    font-size: 0.7rem;
-    width: 22px; height: 22px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-    margin-top: 1px;
-    font-family: 'JetBrains Mono', monospace;
-  }
-
-  code {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.78rem;
-    background: rgba(0,212,255,0.1);
-    color: var(--accent);
-    padding: 0.1rem 0.35rem;
-    border-radius: 4px;
-  }
-
-  .app-rec {
-    display: flex;
-    gap: 0.75rem;
-    align-items: flex-start;
-    padding: 0.5rem 0;
-    border-bottom: 1px solid var(--border);
-  }
-  .app-rec:last-child { border-bottom: none; }
-  .app-icon {
-    width: 36px; height: 36px;
-    border-radius: 8px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 1.2rem;
-    flex-shrink: 0;
-    background: #0d1525;
-    border: 1px solid var(--border);
-  }
-  .app-name { font-weight: 700; font-size: 0.85rem; }
-  .app-desc { font-size: 0.75rem; color: var(--muted); margin-top: 0.15rem; }
-
-  .copied-toast {
-    position: fixed;
-    bottom: 2rem;
-    left: 50%;
-    transform: translateX(-50%);
-    background: var(--accent);
-    color: #000;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.8rem;
-    font-weight: 700;
-    padding: 0.5rem 1.25rem;
-    border-radius: 999px;
-    opacity: 0;
-    transition: opacity 0.3s;
-    pointer-events: none;
-  }
-  .copied-toast.show { opacity: 1; }
+  .orb { position: fixed; border-radius: 50%; filter: blur(80px); pointer-events: none; z-index: 0; }
+  .orb1 { width: 300px; height: 300px; background: radial-gradient(circle, rgba(200,255,0,0.08), transparent 70%); top: -60px; right: -60px; }
+  .orb2 { width: 250px; height: 250px; background: radial-gradient(circle, rgba(0,160,255,0.06), transparent 70%); bottom: 0; left: -80px; }
+  .wrapper { position: relative; z-index: 1; width: 100%; max-width: 360px; display: flex; flex-direction: column; gap: 1.5rem; }
+  .header { text-align: center; animation: fadeUp 0.6s ease both; }
+  .title { font-family: 'Bebas Neue', sans-serif; font-size: 3.5rem; letter-spacing: 0.05em; line-height: 1; color: var(--text); }
+  .title span { color: var(--accent); }
+  .tagline { font-size: 0.65rem; letter-spacing: 0.2em; color: var(--muted); text-transform: uppercase; margin-top: 0.4rem; }
+  .status-pill { display: flex; align-items: center; justify-content: center; gap: 0.5rem; font-size: 0.7rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); animation: fadeUp 0.6s 0.1s ease both; }
+  .status-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--muted); transition: all 0.4s ease; flex-shrink: 0; }
+  .status-dot.connected { background: var(--accent); box-shadow: 0 0 8px var(--accent), 0 0 20px rgba(200,255,0,0.4); animation: breathe 2.5s ease-in-out infinite; }
+  .status-dot.error { background: var(--red); box-shadow: 0 0 8px var(--red); }
+  @keyframes breathe { 0%,100%{opacity:1;box-shadow:0 0 8px var(--accent),0 0 20px rgba(200,255,0,0.4)} 50%{opacity:0.7;box-shadow:0 0 4px var(--accent),0 0 10px rgba(200,255,0,0.2)} }
+  .time-card { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 1.75rem 1.5rem; position: relative; overflow: hidden; animation: fadeUp 0.6s 0.2s ease both; transition: border-color 0.4s ease; }
+  .time-card.has-data { border-color: rgba(200,255,0,0.2); }
+  .time-card::before { content:''; position:absolute; inset:0; background:linear-gradient(135deg,rgba(200,255,0,0.03) 0%,transparent 60%); pointer-events:none; }
+  .card-label { font-size: 0.6rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); margin-bottom: 1rem; }
+  .time-display { font-family: 'Bebas Neue', sans-serif; font-size: 2.2rem; letter-spacing: 0.05em; color: var(--accent); min-height: 2.5rem; transition: all 0.3s ease; word-break: break-all; }
+  .time-display.empty { color: rgba(255,255,255,0.1); font-size: 1.4rem; letter-spacing: 0.15em; }
+  .time-sub { font-size: 0.6rem; color: var(--muted); margin-top: 0.6rem; letter-spacing: 0.1em; min-height: 0.8rem; }
+  .scan-line { position:absolute; left:0; right:0; height:1px; background:linear-gradient(90deg,transparent,rgba(200,255,0,0.4),transparent); top:0; opacity:0; transition:opacity 0.3s; }
+  .time-card.has-data .scan-line { opacity:1; animation:scanDown 2s ease-in-out infinite; }
+  @keyframes scanDown { 0%{top:0;opacity:0} 10%{opacity:1} 90%{opacity:1} 100%{top:100%;opacity:0} }
+  .btn-connect { width:100%; padding:1.1rem; border-radius:16px; border:none; font-family:'DM Mono',monospace; font-size:0.8rem; font-weight:500; letter-spacing:0.15em; text-transform:uppercase; cursor:pointer; transition:all 0.25s ease; position:relative; overflow:hidden; animation:fadeUp 0.6s 0.3s ease both; }
+  .btn-connect.idle { background:var(--accent); color:#0a0a0a; }
+  .btn-connect.idle:active { transform:scale(0.97); background:#aade00; }
+  .btn-connect.connected { background:transparent; border:1px solid rgba(255,59,48,0.4); color:var(--red); }
+  .btn-connect.connected:active { transform:scale(0.97); background:rgba(255,59,48,0.08); }
+  .btn-connect.connecting { background:var(--accent-dim); border:1px solid rgba(200,255,0,0.3); color:var(--accent); pointer-events:none; }
+  .btn-send { width:100%; padding:1.1rem; border-radius:16px; border:1px solid var(--border); background:var(--surface); color:var(--text); font-family:'DM Mono',monospace; font-size:0.8rem; font-weight:500; letter-spacing:0.15em; text-transform:uppercase; cursor:pointer; transition:all 0.25s ease; animation:fadeUp 0.6s 0.4s ease both; display:flex; align-items:center; justify-content:center; gap:0.6rem; }
+  .btn-send:not(:disabled):active { transform:scale(0.97); border-color:rgba(200,255,0,0.3); background:var(--accent-dim); color:var(--accent); }
+  .btn-send:disabled { opacity:0.3; cursor:default; }
+  .send-icon { font-size:0.9rem; transition:transform 0.3s ease; }
+  .btn-send:not(:disabled):active .send-icon { transform:translateX(4px); }
+  .toast { position:fixed; bottom:calc(var(--safe-bottom) + 2rem); left:50%; transform:translateX(-50%) translateY(20px); background:var(--surface); border:1px solid var(--border); border-radius:999px; padding:0.6rem 1.2rem; font-size:0.7rem; letter-spacing:0.1em; color:var(--text); opacity:0; transition:all 0.35s cubic-bezier(0.34,1.56,0.64,1); pointer-events:none; white-space:nowrap; z-index:100; }
+  .toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+  .toast.success { border-color:rgba(200,255,0,0.3); color:var(--accent); }
+  .toast.err { border-color:rgba(255,59,48,0.3); color:var(--red); }
+  .spinner { display:inline-block; width:14px; height:14px; border:2px solid rgba(200,255,0,0.3); border-top-color:var(--accent); border-radius:50%; animation:spin 0.7s linear infinite; vertical-align:middle; }
+  @keyframes spin { to{transform:rotate(360deg)} }
+  @keyframes fadeUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+  @keyframes flashAccent { 0%,100%{color:var(--accent)} 50%{color:#fff} }
+  .flash { animation:flashAccent 0.4s ease; }
+  .no-ble { text-align:center; padding:2rem; color:var(--muted); font-size:0.75rem; line-height:1.8; letter-spacing:0.05em; animation:fadeUp 0.6s ease both; }
+  .no-ble strong { color:var(--red); display:block; font-size:1rem; margin-bottom:0.5rem; }
 </style>
 </head>
 <body>
-
-<div style="max-width:900px;margin:0 auto;">
-  <h1>ESP32-C3 BLE Reference</h1>
-  <div class="subtitle">// Arduino IDE · BLE String Service · iPhone ↔ ESP32</div>
-
-  <div class="grid">
-
-    <!-- Data Flow -->
-    <div class="card full">
-      <div class="card-label">Data Flow</div>
-      <div class="flow">
-        <div class="device">
-          <div class="device-name">📱 iPhone</div>
-          <div class="device-sub">nRF Connect / LightBlue</div>
-        </div>
-        <div class="arrows">
-          <div class="arrow">
-            <span style="color:var(--accent);font-size:0.65rem;">NOTIFY/READ</span>
-            <div class="arrow-line tx"></div>
-            <span style="color:var(--muted);font-size:0.65rem;">string msg</span>
-          </div>
-          <div class="arrow" style="flex-direction:row-reverse;">
-            <span style="color:var(--accent2);font-size:0.65rem;">WRITE</span>
-            <div class="arrow-line rx left"></div>
-            <span style="color:var(--muted);font-size:0.65rem;">time string</span>
-          </div>
-        </div>
-        <div class="device">
-          <div class="device-name">🔧 ESP32-C3</div>
-          <div class="device-sub">"ESP32-C3-BLE"</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- TX Characteristic -->
-    <div class="card">
-      <div class="card-label">TX Characteristic (ESP32 → iPhone)</div>
-      <div class="card-title"><div class="dot"></div> Outgoing String</div>
-      <div style="margin-bottom:0.75rem;">
-        <span class="tag read">READ</span>
-        <span class="tag notify">NOTIFY</span>
-      </div>
-      <div class="uuid-block">
-        <div class="uuid-row">
-          <span class="uuid-key">Service</span>
-          <span class="uuid-val" onclick="copyUUID(this)">12345678-1234-1234-1234-1234567890ab</span>
-        </div>
-        <div class="uuid-row">
-          <span class="uuid-key">Char UUID</span>
-          <span class="uuid-val" onclick="copyUUID(this)">12345678-1234-1234-1234-1234567890ac</span>
-        </div>
-        <div class="copy-hint">↑ click UUID to copy</div>
-      </div>
-      <div style="font-size:0.8rem;color:var(--muted);line-height:1.6;">
-        Sends every <strong style="color:var(--text);">2 seconds</strong> via notify.<br>
-        Subscribe in your BLE app to receive updates.
-      </div>
-    </div>
-
-    <!-- RX Characteristic -->
-    <div class="card rx">
-      <div class="card-label">RX Characteristic (iPhone → ESP32)</div>
-      <div class="card-title"><div class="dot rx"></div> Incoming Time</div>
-      <div style="margin-bottom:0.75rem;">
-        <span class="tag write">WRITE</span>
-      </div>
-      <div class="uuid-block">
-        <div class="uuid-row">
-          <span class="uuid-key">Service</span>
-          <span class="uuid-val rx" onclick="copyUUID(this)">12345678-1234-1234-1234-1234567890ab</span>
-        </div>
-        <div class="uuid-row">
-          <span class="uuid-key">Char UUID</span>
-          <span class="uuid-val rx" onclick="copyUUID(this)">12345678-1234-1234-1234-1234567890ad</span>
-        </div>
-        <div class="copy-hint">↑ click UUID to copy</div>
-      </div>
-      <div style="font-size:0.8rem;color:var(--muted);line-height:1.6;">
-        Write a UTF-8 time string e.g.<br>
-        <code>2025-03-03 14:32:00</code>
-      </div>
-    </div>
-
-    <!-- Steps -->
-    <div class="card">
-      <div class="card-label">Arduino IDE Setup</div>
-      <div class="card-title" style="margin-bottom:1rem;">🛠 Steps to Flash</div>
-      <ol class="step-list">
-        <li>Install <strong>esp32</strong> board package via Board Manager (URL: <code>espressif/arduino-esp32</code>)</li>
-        <li>Select board: <strong>ESP32C3 Dev Module</strong></li>
-        <li>Set USB CDC On Boot: <strong>Enabled</strong> (for Serial.println)</li>
-        <li>No extra BLE library needed — it's bundled with the esp32 package</li>
-        <li>Flash, open Serial Monitor at <code>115200</code> baud</li>
-      </ol>
-    </div>
-
-    <!-- iPhone Apps -->
-    <div class="card">
-      <div class="card-label">iPhone BLE Apps</div>
-      <div class="card-title" style="margin-bottom:1rem;">📲 Test on iPhone</div>
-      <div class="app-rec">
-        <div class="app-icon">🔵</div>
-        <div>
-          <div class="app-name">nRF Connect</div>
-          <div class="app-desc">Best for testing. Connect → find service → enable notify on TX char, write time string to RX char.</div>
-        </div>
-      </div>
-      <div class="app-rec">
-        <div class="app-icon">💡</div>
-        <div>
-          <div class="app-name">LightBlue</div>
-          <div class="app-desc">More beginner friendly. Tap a characteristic to read/write/subscribe.</div>
-        </div>
-      </div>
-      <div class="app-rec">
-        <div class="app-icon">⚡</div>
-        <div>
-          <div class="app-name">Custom Swift App</div>
-          <div class="app-desc">Use CoreBluetooth to auto-send time on connect. Ask me and I'll write it!</div>
-        </div>
-      </div>
-    </div>
-
+<div class="orb orb1"></div>
+<div class="orb orb2"></div>
+<div class="wrapper" id="app">
+  <div class="header">
+    <div class="title">ESP<span>32</span></div>
+    <div class="tagline">Bluetooth Low Energy Controller</div>
   </div>
+  <div class="status-pill">
+    <div class="status-dot" id="statusDot"></div>
+    <span id="statusText">Disconnected</span>
+  </div>
+  <div class="time-card" id="timeCard">
+    <div class="scan-line"></div>
+    <div class="card-label">Received from device</div>
+    <div class="time-display empty" id="timeDisplay">-- -- --</div>
+    <div class="time-sub" id="timeSub"></div>
+  </div>
+  <button class="btn-connect idle" id="btnConnect" onclick="toggleConnect()">Connect to ESP32</button>
+  <button class="btn-send" id="btnSend" disabled onclick="sendTime()">
+    <span class="send-icon">&#8987;</span> Send Current Time
+  </button>
 </div>
-
-<div class="copied-toast" id="toast">UUID copied!</div>
-
+<div class="toast" id="toast"></div>
 <script>
-  function copyUUID(el) {
-    navigator.clipboard.writeText(el.textContent.trim()).then(() => {
-      const t = document.getElementById('toast');
-      t.classList.add('show');
-      setTimeout(() => t.classList.remove('show'), 1800);
-    });
+  const SERVICE_UUID = '12345678-1234-1234-1234-1234567890ab';
+  const CHAR_TX_UUID = '12345678-1234-1234-1234-1234567890ac';
+  const CHAR_RX_UUID = '12345678-1234-1234-1234-1234567890ad';
+  let device=null, server=null, txChar=null, rxChar=null, connected=false;
+  const btnConnect=document.getElementById('btnConnect');
+  const btnSend=document.getElementById('btnSend');
+  const timeDisplay=document.getElementById('timeDisplay');
+  const timeSub=document.getElementById('timeSub');
+  const timeCard=document.getElementById('timeCard');
+  const statusDot=document.getElementById('statusDot');
+  const statusText=document.getElementById('statusText');
+  const toastEl=document.getElementById('toast');
+
+  if (!navigator.bluetooth) {
+    document.getElementById('app').innerHTML='<div class="no-ble"><strong>Web Bluetooth not supported</strong>This app needs Web Bluetooth.<br><br>On iPhone use <strong>Bluefy</strong> or <strong>WebBLE</strong> browser.<br>Safari does not support Web Bluetooth.</div>';
+  }
+
+  async function toggleConnect() { connected ? disconnect() : await connect(); }
+
+  async function connect() {
+    try {
+      setConnecting();
+      device = await navigator.bluetooth.requestDevice({ filters:[{name:'ESP32-C3-BLE'}], optionalServices:[SERVICE_UUID] });
+      device.addEventListener('gattserverdisconnected', onDisconnected);
+      server = await device.gatt.connect();
+      const service = await server.getPrimaryService(SERVICE_UUID);
+      txChar = await service.getCharacteristic(CHAR_TX_UUID);
+      rxChar = await service.getCharacteristic(CHAR_RX_UUID);
+      await txChar.startNotifications();
+      txChar.addEventListener('characteristicvaluechanged', onNotify);
+      setConnected(true);
+      showToast('Connected to ESP32-C3', 'success');
+    } catch(e) {
+      setConnected(false);
+      if (e.name !== 'NotFoundError') showToast('Connection failed', 'err');
+      console.error(e);
+    }
+  }
+
+  function disconnect() { if(device&&device.gatt.connected) device.gatt.disconnect(); onDisconnected(); }
+
+  function onDisconnected() { setConnected(false); txChar=null; rxChar=null; showToast('Disconnected','err'); }
+
+  function onNotify(event) {
+    const value = new TextDecoder().decode(event.target.value);
+    timeDisplay.textContent = value;
+    timeDisplay.classList.remove('empty','flash');
+    void timeDisplay.offsetWidth;
+    timeDisplay.classList.add('flash');
+    timeCard.classList.add('has-data');
+    timeSub.textContent = 'Updated ' + new Date().toLocaleTimeString();
+  }
+
+  async function sendTime() {
+    if (!rxChar) return;
+    try {
+      const now = new Date();
+      const pad = n => String(n).padStart(2,'0');
+      const timeStr = now.getFullYear()+'-'+pad(now.getMonth()+1)+'-'+pad(now.getDate())+' '+pad(now.getHours())+':'+pad(now.getMinutes())+':'+pad(now.getSeconds());
+      await rxChar.writeValue(new TextEncoder().encode(timeStr));
+      showToast('Sent: '+timeStr, 'success');
+    } catch(e) { showToast('Send failed','err'); console.error(e); }
+  }
+
+  function setConnecting() {
+    btnConnect.className='btn-connect connecting';
+    btnConnect.innerHTML='<span class="spinner"></span>&nbsp; Connecting...';
+    statusDot.className='status-dot'; statusText.textContent='Connecting...'; btnSend.disabled=true;
+  }
+
+  function setConnected(yes) {
+    connected=yes;
+    if (yes) {
+      btnConnect.className='btn-connect connected'; btnConnect.textContent='Disconnect';
+      statusDot.className='status-dot connected'; statusText.textContent=device?.name||'Connected'; btnSend.disabled=false;
+    } else {
+      btnConnect.className='btn-connect idle'; btnConnect.textContent='Connect to ESP32';
+      statusDot.className='status-dot'; statusText.textContent='Disconnected'; btnSend.disabled=true;
+      timeCard.classList.remove('has-data'); timeDisplay.textContent='-- -- --'; timeDisplay.classList.add('empty'); timeSub.textContent='';
+    }
+  }
+
+  let toastTimer;
+  function showToast(msg,type='') {
+    toastEl.textContent=msg; toastEl.className='toast show '+type;
+    clearTimeout(toastTimer); toastTimer=setTimeout(()=>toastEl.className='toast',2500);
   }
 </script>
 </body>
