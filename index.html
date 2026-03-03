@@ -1,48 +1,449 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ESP32-C3 Time Sender</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ESP32-C3 BLE Reference</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Syne:wght@400;700;800&display=swap');
+
+  :root {
+    --bg: #0a0e1a;
+    --card: #111827;
+    --border: #1e2d45;
+    --accent: #00d4ff;
+    --accent2: #ff6b35;
+    --green: #00ff88;
+    --text: #e2e8f0;
+    --muted: #64748b;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    min-height: 100vh;
+    padding: 2rem;
+    background-image:
+      radial-gradient(ellipse at 20% 50%, rgba(0,212,255,0.05) 0%, transparent 60%),
+      radial-gradient(ellipse at 80% 20%, rgba(255,107,53,0.05) 0%, transparent 60%);
+  }
+
+  h1 {
+    font-size: 2rem;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 0.25rem;
+  }
+
+  .subtitle {
+    color: var(--muted);
+    font-size: 0.9rem;
+    font-family: 'JetBrains Mono', monospace;
+    margin-bottom: 2.5rem;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    max-width: 900px;
+    margin: 0 auto;
+  }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.5rem;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--accent), transparent);
+  }
+
+  .card.rx::before {
+    background: linear-gradient(90deg, var(--accent2), transparent);
+  }
+
+  .card.full { grid-column: 1 / -1; }
+
+  .card-label {
+    font-size: 0.7rem;
+    font-family: 'JetBrains Mono', monospace;
+    letter-spacing: 0.15em;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 0.75rem;
+  }
+
+  .card-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 8px var(--accent);
+    animation: pulse 2s ease-in-out infinite;
+  }
+  .dot.rx { background: var(--accent2); box-shadow: 0 0 8px var(--accent2); }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  .uuid-block {
+    background: #0d1525;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .uuid-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 0.35rem;
+  }
+  .uuid-row:last-child { margin-bottom: 0; }
+
+  .uuid-key {
+    font-size: 0.7rem;
+    color: var(--muted);
+    font-family: 'JetBrains Mono', monospace;
+    white-space: nowrap;
+  }
+
+  .uuid-val {
+    font-size: 0.72rem;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--accent);
+    word-break: break-all;
+    cursor: pointer;
+    transition: color 0.2s;
+  }
+  .uuid-val:hover { color: #fff; }
+  .uuid-val.rx { color: var(--accent2); }
+
+  .copy-hint {
+    font-size: 0.65rem;
+    color: var(--muted);
+    font-family: 'JetBrains Mono', monospace;
+    margin-top: 0.5rem;
+    opacity: 0.7;
+  }
+
+  .flow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    padding: 1.5rem 0;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.85rem;
+  }
+
+  .device {
+    background: #0d1525;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 0.75rem 1.25rem;
+    text-align: center;
+    min-width: 110px;
+  }
+
+  .device-name { font-weight: 700; font-size: 0.9rem; }
+  .device-sub { color: var(--muted); font-size: 0.7rem; margin-top: 0.2rem; }
+
+  .arrows {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    align-items: center;
+  }
+
+  .arrow {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.7rem;
+    white-space: nowrap;
+  }
+
+  .arrow-line {
+    height: 1px;
+    width: 80px;
+    position: relative;
+  }
+  .arrow-line.tx { background: var(--accent); }
+  .arrow-line.rx { background: var(--accent2); }
+
+  .arrow-line::after {
+    content: '▶';
+    position: absolute;
+    right: -6px;
+    top: -7px;
+    font-size: 0.6rem;
+  }
+  .arrow-line.tx::after { color: var(--accent); }
+  .arrow-line.rx::after { color: var(--accent2); }
+
+  .arrow-line.left::after {
+    content: '◀';
+    left: -6px;
+    right: auto;
+  }
+
+  .tag {
+    display: inline-block;
+    font-size: 0.65rem;
+    font-family: 'JetBrains Mono', monospace;
+    padding: 0.15rem 0.5rem;
+    border-radius: 4px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    margin-right: 0.3rem;
+  }
+  .tag.notify { background: rgba(0,212,255,0.15); color: var(--accent); border: 1px solid rgba(0,212,255,0.3); }
+  .tag.read   { background: rgba(0,255,136,0.1); color: var(--green); border: 1px solid rgba(0,255,136,0.3); }
+  .tag.write  { background: rgba(255,107,53,0.15); color: var(--accent2); border: 1px solid rgba(255,107,53,0.3); }
+
+  .step-list {
+    list-style: none;
+    counter-reset: steps;
+  }
+  .step-list li {
+    counter-increment: steps;
+    display: flex;
+    gap: 0.75rem;
+    padding: 0.6rem 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.85rem;
+    line-height: 1.5;
+  }
+  .step-list li:last-child { border-bottom: none; }
+  .step-list li::before {
+    content: counter(steps);
+    background: linear-gradient(135deg, var(--accent), #006aff);
+    color: #000;
+    font-weight: 700;
+    font-size: 0.7rem;
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-top: 1px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  code {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.78rem;
+    background: rgba(0,212,255,0.1);
+    color: var(--accent);
+    padding: 0.1rem 0.35rem;
+    border-radius: 4px;
+  }
+
+  .app-rec {
+    display: flex;
+    gap: 0.75rem;
+    align-items: flex-start;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .app-rec:last-child { border-bottom: none; }
+  .app-icon {
+    width: 36px; height: 36px;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.2rem;
+    flex-shrink: 0;
+    background: #0d1525;
+    border: 1px solid var(--border);
+  }
+  .app-name { font-weight: 700; font-size: 0.85rem; }
+  .app-desc { font-size: 0.75rem; color: var(--muted); margin-top: 0.15rem; }
+
+  .copied-toast {
+    position: fixed;
+    bottom: 2rem;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--accent);
+    color: #000;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.8rem;
+    font-weight: 700;
+    padding: 0.5rem 1.25rem;
+    border-radius: 999px;
+    opacity: 0;
+    transition: opacity 0.3s;
+    pointer-events: none;
+  }
+  .copied-toast.show { opacity: 1; }
+</style>
 </head>
 <body>
-  <h1>ESP32-C3 Time Sender</h1>
-  <button id="connect">Connect BLE</button>
-  <button id="send">Send Current Time</button>
 
-  <script>
-    let device;
-    let characteristic;
+<div style="max-width:900px;margin:0 auto;">
+  <h1>ESP32-C3 BLE Reference</h1>
+  <div class="subtitle">// Arduino IDE · BLE String Service · iPhone ↔ ESP32</div>
 
-    const SERVICE_UUID = "4fafc201-1fb5-459e-8fcc-c5c9c331914b";
-    const CHAR_UUID    = "beb5483e-36e1-4688-b7f5-ea07361b26a8";
+  <div class="grid">
 
-    document.getElementById("connect").addEventListener("click", async () => {
-      try {
-        device = await navigator.bluetooth.requestDevice({
-          filters: [{services: [SERVICE_UUID]}]
-        });
-        const server = await device.gatt.connect();
-        const service = await server.getPrimaryService(SERVICE_UUID);
-        characteristic = await service.getCharacteristic(CHAR_UUID);
-        alert("Connected!");
-      } catch (err) {
-        console.error(err);
-        alert("Connection failed: " + err);
-      }
+    <!-- Data Flow -->
+    <div class="card full">
+      <div class="card-label">Data Flow</div>
+      <div class="flow">
+        <div class="device">
+          <div class="device-name">📱 iPhone</div>
+          <div class="device-sub">nRF Connect / LightBlue</div>
+        </div>
+        <div class="arrows">
+          <div class="arrow">
+            <span style="color:var(--accent);font-size:0.65rem;">NOTIFY/READ</span>
+            <div class="arrow-line tx"></div>
+            <span style="color:var(--muted);font-size:0.65rem;">string msg</span>
+          </div>
+          <div class="arrow" style="flex-direction:row-reverse;">
+            <span style="color:var(--accent2);font-size:0.65rem;">WRITE</span>
+            <div class="arrow-line rx left"></div>
+            <span style="color:var(--muted);font-size:0.65rem;">time string</span>
+          </div>
+        </div>
+        <div class="device">
+          <div class="device-name">🔧 ESP32-C3</div>
+          <div class="device-sub">"ESP32-C3-BLE"</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TX Characteristic -->
+    <div class="card">
+      <div class="card-label">TX Characteristic (ESP32 → iPhone)</div>
+      <div class="card-title"><div class="dot"></div> Outgoing String</div>
+      <div style="margin-bottom:0.75rem;">
+        <span class="tag read">READ</span>
+        <span class="tag notify">NOTIFY</span>
+      </div>
+      <div class="uuid-block">
+        <div class="uuid-row">
+          <span class="uuid-key">Service</span>
+          <span class="uuid-val" onclick="copyUUID(this)">12345678-1234-1234-1234-1234567890ab</span>
+        </div>
+        <div class="uuid-row">
+          <span class="uuid-key">Char UUID</span>
+          <span class="uuid-val" onclick="copyUUID(this)">12345678-1234-1234-1234-1234567890ac</span>
+        </div>
+        <div class="copy-hint">↑ click UUID to copy</div>
+      </div>
+      <div style="font-size:0.8rem;color:var(--muted);line-height:1.6;">
+        Sends every <strong style="color:var(--text);">2 seconds</strong> via notify.<br>
+        Subscribe in your BLE app to receive updates.
+      </div>
+    </div>
+
+    <!-- RX Characteristic -->
+    <div class="card rx">
+      <div class="card-label">RX Characteristic (iPhone → ESP32)</div>
+      <div class="card-title"><div class="dot rx"></div> Incoming Time</div>
+      <div style="margin-bottom:0.75rem;">
+        <span class="tag write">WRITE</span>
+      </div>
+      <div class="uuid-block">
+        <div class="uuid-row">
+          <span class="uuid-key">Service</span>
+          <span class="uuid-val rx" onclick="copyUUID(this)">12345678-1234-1234-1234-1234567890ab</span>
+        </div>
+        <div class="uuid-row">
+          <span class="uuid-key">Char UUID</span>
+          <span class="uuid-val rx" onclick="copyUUID(this)">12345678-1234-1234-1234-1234567890ad</span>
+        </div>
+        <div class="copy-hint">↑ click UUID to copy</div>
+      </div>
+      <div style="font-size:0.8rem;color:var(--muted);line-height:1.6;">
+        Write a UTF-8 time string e.g.<br>
+        <code>2025-03-03 14:32:00</code>
+      </div>
+    </div>
+
+    <!-- Steps -->
+    <div class="card">
+      <div class="card-label">Arduino IDE Setup</div>
+      <div class="card-title" style="margin-bottom:1rem;">🛠 Steps to Flash</div>
+      <ol class="step-list">
+        <li>Install <strong>esp32</strong> board package via Board Manager (URL: <code>espressif/arduino-esp32</code>)</li>
+        <li>Select board: <strong>ESP32C3 Dev Module</strong></li>
+        <li>Set USB CDC On Boot: <strong>Enabled</strong> (for Serial.println)</li>
+        <li>No extra BLE library needed — it's bundled with the esp32 package</li>
+        <li>Flash, open Serial Monitor at <code>115200</code> baud</li>
+      </ol>
+    </div>
+
+    <!-- iPhone Apps -->
+    <div class="card">
+      <div class="card-label">iPhone BLE Apps</div>
+      <div class="card-title" style="margin-bottom:1rem;">📲 Test on iPhone</div>
+      <div class="app-rec">
+        <div class="app-icon">🔵</div>
+        <div>
+          <div class="app-name">nRF Connect</div>
+          <div class="app-desc">Best for testing. Connect → find service → enable notify on TX char, write time string to RX char.</div>
+        </div>
+      </div>
+      <div class="app-rec">
+        <div class="app-icon">💡</div>
+        <div>
+          <div class="app-name">LightBlue</div>
+          <div class="app-desc">More beginner friendly. Tap a characteristic to read/write/subscribe.</div>
+        </div>
+      </div>
+      <div class="app-rec">
+        <div class="app-icon">⚡</div>
+        <div>
+          <div class="app-name">Custom Swift App</div>
+          <div class="app-desc">Use CoreBluetooth to auto-send time on connect. Ask me and I'll write it!</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="copied-toast" id="toast">UUID copied!</div>
+
+<script>
+  function copyUUID(el) {
+    navigator.clipboard.writeText(el.textContent.trim()).then(() => {
+      const t = document.getElementById('toast');
+      t.classList.add('show');
+      setTimeout(() => t.classList.remove('show'), 1800);
     });
-
-    document.getElementById("send").addEventListener("click", async () => {
-      if (!characteristic) return alert("Not connected");
-
-      const now = new Date();
-      const timeStr = now.toISOString();
-      const encoder = new TextEncoder();
-      await characteristic.writeValue(encoder.encode(timeStr));
-      console.log("Sent:", timeStr);
-      alert("Time sent: " + timeStr);
-    });
-  </script>
+  }
+</script>
 </body>
-
 </html>
