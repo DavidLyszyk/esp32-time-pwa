@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>ESP32 BLE</title>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Bebas+Neue&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Bebas+Neue&family=Barlow+Condensed:wght@700&display=swap');
   :root {
     --bg: #060608;
     --surface: #0f1117;
@@ -30,7 +30,7 @@
   .orb2 { width: 250px; height: 250px; background: radial-gradient(circle, rgba(0,160,255,0.06), transparent 70%); bottom: 0; left: -80px; }
   .wrapper { position: relative; z-index: 1; width: 100%; max-width: 360px; display: flex; flex-direction: column; gap: 1.5rem; }
   .header { text-align: center; animation: fadeUp 0.6s ease both; }
-  .title { font-family: 'Bebas Neue', sans-serif; font-size: 3.5rem; letter-spacing: 0.05em; line-height: 1; color: var(--text); }
+  .title { font-family: 'Bebas Neue', sans-serif; font-size: 3.5rem; letter-spacing: 0.05em; line-height: 1; color: var(--text); text-transform: none;}
   .title span { color: var(--accent); }
   .tagline { font-size: 0.65rem; letter-spacing: 0.2em; color: var(--muted); text-transform: uppercase; margin-top: 0.4rem; }
   .status-pill { display: flex; align-items: center; justify-content: center; gap: 0.5rem; font-size: 0.7rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); animation: fadeUp 0.6s 0.1s ease both; }
@@ -77,7 +77,7 @@
 <div class="orb orb2"></div>
 <div class="wrapper" id="app">
   <div class="header">
-    <div class="title">ESP<span>32</span></div>
+    <div class="title"><span style="font-family:'Barlow Condensed',sans-serif; font-size:2rem">Lyszyk's </span>ESP<span>32</span>Clock</div>
     <div class="tagline">Bluetooth Low Energy Controller</div>
   </div>
   <div class="status-pill">
@@ -92,8 +92,12 @@
   </div>
   <button class="btn-connect idle" id="btnConnect" onclick="toggleConnect()">Connect to ESP32</button>
   <button class="btn-send" id="btnSend" disabled onclick="sendTime()">
-    <span class="send-icon">&#8987;</span> Send Current Time
+    <span class="send-icon">&#128336;</span> Send Current Time
   </button>
+  <div style="display:flex; gap:1rem;">
+    <button class="btn-send" id="btnAnim1" disabled onclick="sendCommand('anim1')" style="width:50%;">anim1</button>
+    <button class="btn-send" id="btnAnim2" disabled onclick="sendCommand('anim2')" style="width:50%;">anim2</button>
+  </div>
 </div>
 <div class="toast" id="toast"></div>
 <script>
@@ -150,6 +154,14 @@
     timeSub.textContent = 'Updated ' + new Date().toLocaleTimeString();
   }
 
+  async function sendCommand(cmd) {
+    if (!rxChar) return;
+    try {
+      await rxChar.writeValue(new TextEncoder().encode(cmd));
+      showToast('Sent: ' + cmd, 'success');
+    } catch(e) { showToast('Send failed','err'); console.error(e); }
+  }
+  
   async function sendTime() {
     if (!rxChar) return;
     try {
@@ -164,17 +176,17 @@
   function setConnecting() {
     btnConnect.className='btn-connect connecting';
     btnConnect.innerHTML='<span class="spinner"></span>&nbsp; Connecting...';
-    statusDot.className='status-dot'; statusText.textContent='Connecting...'; btnSend.disabled=true;
+    statusDot.className='status-dot'; statusText.textContent='Connecting...'; btnSend.disabled=btnAnim1.disabled=btnAnim2.disabled=true;
   }
 
   function setConnected(yes) {
     connected=yes;
     if (yes) {
       btnConnect.className='btn-connect connected'; btnConnect.textContent='Disconnect';
-      statusDot.className='status-dot connected'; statusText.textContent=device?.name||'Connected'; btnSend.disabled=false;
+      statusDot.className='status-dot connected'; statusText.textContent=device?.name||'Connected'; btnSend.disabled=btnAnim1.disabled=btnAnim2.disabled=false;
     } else {
       btnConnect.className='btn-connect idle'; btnConnect.textContent='Connect to ESP32';
-      statusDot.className='status-dot'; statusText.textContent='Disconnected'; btnSend.disabled=true;
+      statusDot.className='status-dot'; statusText.textContent='Disconnected'; btnSend.disabled=btnAnim1.disabled=btnAnim2.disabled=true;
       timeCard.classList.remove('has-data'); timeDisplay.textContent='-- -- --'; timeDisplay.classList.add('empty'); timeSub.textContent='';
     }
   }
